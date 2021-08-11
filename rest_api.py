@@ -1,10 +1,10 @@
-# https://flask-russian-docs.readthedocs.io/ru/latest/patterns/fileuploads.html
-
 import os
-from flask import Flask, request, redirect, url_for, render_template
+
+from flask import Flask, request, redirect, \
+    url_for, render_template, send_from_directory, send_file
 from werkzeug.utils import secure_filename
 
-UPLOAD_FOLDER = '/store'
+UPLOAD_FOLDER = 'store'
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 
 app = Flask(__name__)
@@ -24,53 +24,66 @@ def allowed_file(filename):
 #         file = request.files["file"]
 #         if bool(file.filename):
 #             file_bytes = file.read(app.config['MAX_CONTENT_LENGTH'])
-#             args["file_size_error"] = len(file_bytes) == app.config['MAX_CONTENT_LENGTH']
+#             args["file_size_error"] =
+#               len(file_bytes) == app.config['MAX_CONTENT_LENGTH']
 #         args["method"] = "POST"
 #     return render_template("index.html", args=args)
 
+@app.route('/1/')
+def hello():
+    return render_template("index1.html")
+
 
 @app.route('/', methods=['GET', 'POST'])
-def upload_file():
+def upload_file(**kwargs):
     if request.method == 'POST':
         file = request.files['file']
         if file and allowed_file(file.filename):
-            print("allowed_file")
-            print(file.filename)
             filename = secure_filename(file.filename)
-            # filename = file.filename
-            print("1")
-            print(filename)
             path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            path = app.config['UPLOAD_FOLDER'] + '/' + filename
-            print(path)
-
-            # file.save(path)
-            file.save('/store/' + filename)
-            print("2")
-
-            # return redirect(url_for('uploaded_file',
-            #                         filename=filename))
+            file.save(path)
         else:
             print("NOT allowed_file")
+
     print("3")
 
-    # return render_template("index.html", args={"method": request.method})
-    return '''
-    <!doctype html>
-    <title>Upload new File</title>
-    <h1>Upload new File</h1>
-    <form action="" method=post enctype=multipart/form-data>
-      <p><input type=file name=file>
-         <input type=submit value=Upload>
-    </form>
-    '''
+    return render_template("index.html")
 
-from flask import send_from_directory
+
 
 @app.route('/store/<filename>')
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'],
                                filename)
+
+@app.route('/download/<path:filename>')
+def dashboard(filename):
+    path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    return send_file(path, as_attachment=True)
+
+@app.route('/uploads/<path:filename>')
+def download(filename):
+    return send_from_directory(
+        directory=app.config['UPLOAD_FOLDER'], filename=filename)
+
+def del_files_in_path(path):
+    filenames = []
+    for root, dirs, files in os.walk(path):
+        for filename in files:
+            filenames.append(filename)
+    for filename in filenames:
+        file = os.path.join(path, filename)
+        os.remove(file)
+
+def create_dir(path):
+    if not os.path.exists(path):
+        os.mkdir(path)
+    else:
+        print(path, '- dir already exists')
+
+
+create_dir(UPLOAD_FOLDER)
+del_files_in_path(UPLOAD_FOLDER)
 
 
 app.run()
