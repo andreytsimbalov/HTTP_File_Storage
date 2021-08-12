@@ -1,8 +1,7 @@
 import os
-
+import hashlib
 from flask import Flask, request, redirect, \
-    url_for, render_template, \
-    send_from_directory, send_file
+    url_for, render_template, send_file
 from werkzeug.utils import secure_filename
 
 UPLOAD_FOLDER = 'store'
@@ -17,23 +16,28 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
 
 
+def filename_hash(file):
+    filename = secure_filename(file.filename)
+    file_read = file.read()
+    filename_split = filename.split('.')
+    filename_hashable = filename_split[0] + str(len(file_read))
+    hashlib_md5 = hashlib.md5()
+    hashlib_md5.update(filename_hashable.encode('utf-8'))
+    new_filename = hashlib_md5.hexdigest()
+    new_filename = new_filename + '.' + filename_split[1]
+    return new_filename
+
+
 @app.route('/', methods=['GET', 'POST'])
 def upload_file():
     if request.method == 'POST':
         file = request.files['file']
         if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
+            filename = filename_hash(file)
             path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(path)
+            return filename
     return render_template("index.html")
-
-
-# @app.route('/store/<filename>')
-# def get_uploaded_file(filename):
-#     return send_from_directory(
-#         app.config['UPLOAD_FOLDER'],
-#         filename
-#     )
 
 
 @app.route('/download/<path:filename>')
