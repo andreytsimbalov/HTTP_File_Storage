@@ -1,14 +1,14 @@
 import os
 
 from flask import Flask, request, redirect, \
-    url_for, render_template, send_from_directory, send_file
+    url_for, render_template, \
+    send_from_directory, send_file
 from werkzeug.utils import secure_filename
 
 UPLOAD_FOLDER = 'store'
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 
 app = Flask(__name__)
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
@@ -17,54 +17,40 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
 
 
-# @app.route("/", methods=["POST", "GET"])
-# def index():
-#     args = {"method": "GET"}
-#     if request.method == "POST":
-#         file = request.files["file"]
-#         if bool(file.filename):
-#             file_bytes = file.read(app.config['MAX_CONTENT_LENGTH'])
-#             args["file_size_error"] =
-#               len(file_bytes) == app.config['MAX_CONTENT_LENGTH']
-#         args["method"] = "POST"
-#     return render_template("index.html", args=args)
-
-@app.route('/1/')
-def hello():
-    return render_template("index1.html")
-
-
 @app.route('/', methods=['GET', 'POST'])
-def upload_file(**kwargs):
+def upload_file():
     if request.method == 'POST':
         file = request.files['file']
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
             path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(path)
-        else:
-            print("NOT allowed_file")
-
-    print("3")
-
     return render_template("index.html")
 
 
+# @app.route('/store/<filename>')
+# def get_uploaded_file(filename):
+#     return send_from_directory(
+#         app.config['UPLOAD_FOLDER'],
+#         filename
+#     )
 
-@app.route('/store/<filename>')
-def uploaded_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'],
-                               filename)
 
 @app.route('/download/<path:filename>')
-def dashboard(filename):
+def download_file(filename):
     path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    return send_file(path, as_attachment=True)
+    if os.path.exists(path):
+        return send_file(path, as_attachment=True)
+    return redirect(url_for('upload_file'))
 
-@app.route('/uploads/<path:filename>')
-def download(filename):
-    return send_from_directory(
-        directory=app.config['UPLOAD_FOLDER'], filename=filename)
+
+@app.route('/delete/<path:filename>')
+def delete_file(filename):
+    path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    if os.path.exists(path):
+        os.remove(path)
+    return redirect(url_for('upload_file'))
+
 
 def del_files_in_path(path):
     filenames = []
@@ -75,6 +61,7 @@ def del_files_in_path(path):
         file = os.path.join(path, filename)
         os.remove(file)
 
+
 def create_dir(path):
     if not os.path.exists(path):
         os.mkdir(path)
@@ -82,9 +69,8 @@ def create_dir(path):
         print(path, '- dir already exists')
 
 
-create_dir(UPLOAD_FOLDER)
-del_files_in_path(UPLOAD_FOLDER)
+# create_dir(UPLOAD_FOLDER)
+# del_files_in_path(UPLOAD_FOLDER)
 
 
 app.run()
-
