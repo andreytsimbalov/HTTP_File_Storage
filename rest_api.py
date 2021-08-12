@@ -18,11 +18,9 @@ def allowed_file(filename):
 
 def filename_hash(file):
     filename = secure_filename(file.filename)
-    file_read = file.read()
     filename_split = filename.split('.')
-    filename_hashable = filename_split[0] + str(len(file_read))
     hashlib_md5 = hashlib.md5()
-    hashlib_md5.update(filename_hashable.encode('utf-8'))
+    hashlib_md5.update(filename_split[0].encode('utf-8'))
     new_filename = hashlib_md5.hexdigest()
     new_filename = new_filename + '.' + filename_split[1]
     return new_filename
@@ -34,6 +32,8 @@ def upload_file():
         file = request.files['file']
         if file and allowed_file(file.filename):
             filename = filename_hash(file)
+            # file.__str__()
+            # filename = file.filename
             path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(path)
             return filename
@@ -56,16 +56,6 @@ def delete_file(filename):
     return redirect(url_for('upload_file'))
 
 
-def del_files_in_path(path):
-    filenames = []
-    for root, dirs, files in os.walk(path):
-        for filename in files:
-            filenames.append(filename)
-    for filename in filenames:
-        file = os.path.join(path, filename)
-        os.remove(file)
-
-
 def create_dir(path):
     if not os.path.exists(path):
         os.mkdir(path)
@@ -73,8 +63,6 @@ def create_dir(path):
         print(path, '- dir already exists')
 
 
-# create_dir(UPLOAD_FOLDER)
-# del_files_in_path(UPLOAD_FOLDER)
-
-
-app.run()
+if __name__ == "__main__":
+    create_dir(UPLOAD_FOLDER)
+    app.run()
