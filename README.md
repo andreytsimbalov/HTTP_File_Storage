@@ -20,12 +20,14 @@ The file is uploaded to the server according to the settings from **constants.py
   /ab/ - subdirectory consisting of the first two characters of the file hash.
 
 
-*Download:*
+***Download:***
 
+Download request: the client passes the parameter - the hash of the file. The daemon searches the local storage for the file and gives it back if it finds it.
 
+      http://127.0.0.1:5000/download/abcdef12345...
 
-*Delete:*
+***Delete:***
 
+Delete request: the client passes the parameter - the hash of the file. The daemon looks for the file in local storage and deletes it if it finds it.
 
-
-
+      http://127.0.0.1:5000/delete/abcdef12345...
